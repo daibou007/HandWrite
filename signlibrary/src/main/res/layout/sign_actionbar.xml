@@ -1,29 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+android:layout_width="match_parent"
+android:layout_height="@dimen/sign_actionbar_height"
+android:background="@color/sign_toolbar_bg"
+android:gravity="center_vertical">
+
+<RelativeLayout
+    android:id="@+id/navbar_return"
+    android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    android:background="@color/sign_toolbar_bg">
+    android:layout_alignParentLeft="true"
+    android:paddingLeft="20dip"
+    android:paddingRight="15dip">
 
-    <TextView
-        android:id="@+id/tv_cancel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <ImageButton
+        android:id="@+id/back_btn"
+        android:layout_width="23dip"
+        android:layout_height="23dip"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="10dp"
-        android:padding="5dp"
-        android:text="取消"
-        android:textColor="@android:color/white"
-        android:textSize="@dimen/sign_actionbar_text_size" />
+        android:background="@drawable/ic_return_bg"
+        android:clickable="false" />
+</RelativeLayout>
 
-    <TextView
-        android:id="@+id/tv_ok"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"
-        android:layout_marginRight="10dp"
-        android:padding="5dp"
-        android:text="保存"
-        android:textColor="@android:color/white"
-        android:textSize="@dimen/sign_actionbar_text_size" />
+<TextView
+    android:id="@+id/navigation_title"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:layout_centerHorizontal="true"
+    android:ellipsize="end"
+    android:gravity="center"
+    android:singleLine="true"
+    android:textColor="#FFFFFF"
+    android:textSize="17sp" />
+
 </RelativeLayout>

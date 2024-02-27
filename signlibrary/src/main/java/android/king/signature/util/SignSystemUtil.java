@@ -22,31 +22,7 @@ import java.lang.reflect.Method;
  * @since 2017/11/16
  * @author king
  */
-public class SystemUtil {
-
-    /**
-     * 判断是否平板设备
-     * @param context
-     * @return true:平板,false:手机
-     */
-    public static boolean isTablet(Context context) {
-        return (context.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >=
-                Configuration.SCREENLAYOUT_SIZE_LARGE;
-    }
-
-    /**
-     * 测量View的高度
-     */
-    @SuppressWarnings("ResourceType")
-    public static int makeDropDownMeasureSpec(int measureSpec) {
-        int mode;
-        if (measureSpec == ViewGroup.LayoutParams.WRAP_CONTENT) {
-            mode = View.MeasureSpec.UNSPECIFIED;
-        } else {
-            mode = View.MeasureSpec.EXACTLY;
-        }
-        return View.MeasureSpec.makeMeasureSpec(View.MeasureSpec.getSize(measureSpec), mode);
-    }
+public class SignSystemUtil {
 
     /**
      * 禁止软键盘弹出
@@ -75,14 +51,18 @@ public class SystemUtil {
             if (editText == null) {
                 return;
             }
-            editText.setOnLongClickListener(v -> true);
+            editText.setOnLongClickListener(v -> {
+                return true;
+            });
             editText.setLongClickable(false);
+            editText.setClickable(false);
             editText.setOnTouchListener((v, event) -> {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     setInsertionDisabled(editText);
                 }
-                return false;
+                return true;
             });
+
             editText.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
                 @Override
                 public boolean onCreateActionMode(ActionMode mode, Menu menu) {

@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * @author king
  * @since 2018/06/15
  */
-public abstract class BasePen {
+public abstract class SignBasePen {
     /**
      * 绘制计算的次数，数值越小计算的次数越多
      */

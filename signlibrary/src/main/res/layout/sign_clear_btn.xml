@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/delete_view"
+    android:layout_width="60dp"
+    android:layout_height="32dp"
+    android:layout_marginRight="15dp"
+    android:layout_marginBottom="5dp"
+    android:gravity="start"
+    android:textColor="@color/black"
+    android:textSize="18sp">
+
+    <ImageView
+        android:id="@+id/delete_icon_view"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginRight="5dp"
+        android:src="@drawable/sign_ic_delete"
+        app:layout_constraintBottom_toBottomOf="@+id/delete_view"
+        app:layout_constraintEnd_toStartOf="@+id/delete_text_view"
+        app:layout_constraintTop_toTopOf="@+id/delete_view">
+    </ImageView>
+
+    <TextView
+        android:id="@+id/delete_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:layout_margin="0dp"
+        android:gravity="center_vertical"
+        android:text="回退"
+        android:textColor="@color/sign_pen_black"
+        android:textSize="15sp"
+        app:layout_constraintBottom_toBottomOf="@+id/delete_view"
+        app:layout_constraintEnd_toEndOf="@+id/delete_view"
+        app:layout_constraintTop_toTopOf="@+id/delete_view">
+    </TextView>
+
+</android.support.constraint.ConstraintLayout>

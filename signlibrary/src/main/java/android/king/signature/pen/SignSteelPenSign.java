@@ -13,7 +13,7 @@ import android.king.signature.config.ControllerPoint;
  * @since 2018/06/15
  * @author king
  */
-public class SteelPen extends BasePen {
+public class SignSteelPenSign extends SignBasePen {
 
     @Override
     protected void doPreDraw(Canvas canvas) {

@@ -23,7 +23,7 @@ import java.io.IOException;
  * @author king
  * @since 2018/07/05
  */
-public class BitmapUtil {
+public class SignBitmapUtil {
 
     /**
      * 逐行扫描 清除边界空白
@@ -387,7 +387,7 @@ public class BitmapUtil {
      */
     public static void setImage(ImageView iv, int id, int color) {
         Bitmap bitmap = BitmapFactory.decodeResource(iv.getResources(), id);
-        iv.setImageBitmap(BitmapUtil.changeBitmapColor(bitmap, color));
+        iv.setImageBitmap(SignBitmapUtil.changeBitmapColor(bitmap, color));
     }
 
 }

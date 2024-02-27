@@ -5,32 +5,34 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.king.signature.util.DisplayUtil;
+import android.king.signature.config.PenConfig;
+import android.king.signature.databinding.SignActivityGridPaintBinding;
+import android.king.signature.util.SignBitmapUtil;
+import android.king.signature.util.SignDisplayUtil;
+import android.king.signature.util.SignSystemUtil;
+import android.king.signature.util.StatusBarCompat;
+import android.king.signature.view.GridDrawable;
+import android.king.signature.view.GridPaintView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 import android.widget.Toast;
-
-import android.king.signature.config.PenConfig;
-import android.king.signature.util.BitmapUtil;
-import android.king.signature.util.SystemUtil;
-import android.king.signature.view.CircleImageView;
-import android.king.signature.view.CircleView;
-import android.king.signature.view.GridDrawable;
-import android.king.signature.view.GridPaintView;
-import android.king.signature.view.HVScrollView;
-import android.king.signature.view.HandWriteEditView;
-import android.king.signature.view.PaintSettingWindow;
 
 
 /***
@@ -40,18 +42,10 @@ import android.king.signature.view.PaintSettingWindow;
  * @since 2017/11/14
  * @author king
  */
-public class GridPaintActivity extends BaseActivity implements View.OnClickListener, Handler.Callback {
+public class GridPaintActivity extends AppCompatActivity implements View.OnClickListener, Handler.Callback {
 
-    private View mCircleContainer;
-    private HVScrollView mTextContainer;
-    private HandWriteEditView mEditView;
-    private CircleImageView mDeleteView;
-    private CircleImageView mSpaceView;
-    private CircleImageView mClearView;
-    private CircleImageView mEnterView;
-    private CircleView mPenCircleView;
-    private GridPaintView mPaintView;
     private ProgressDialog mSaveProgressDlg;
+
     private static final int MSG_SAVE_SUCCESS = 1;
     private static final int MSG_SAVE_FAILED = 2;
     private static final int MSG_WRITE_OK = 100;
@@ -60,104 +54,72 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
     private String mSavePath;
     private Editable cacheEditable;
 
+    private SignActivityGridPaintBinding viewBinding;
     private int bgColor;
     private boolean isCrop;
     private String format;
+    private String allText;
+    private int currentIndex;
     private int lineSize;
     private int fontSize;
-
-
-    private PaintSettingWindow settingWindow;
+//    public static final String[] PEN_COLORS = new String[]{"#101010", "#027de9", "#0cba02", "#f9d403", "#ec041f"}
+//    public static final int[] PEN_SIZES = new int[]{5, 15, 20, 25, 30}
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+
+        viewBinding = SignActivityGridPaintBinding.inflate(getLayoutInflater());
+        setContentView(viewBinding.getRoot());
+
         bgColor = getIntent().getIntExtra("background", Color.TRANSPARENT);
         lineSize = getIntent().getIntExtra("lineLength", 15);
         fontSize = getIntent().getIntExtra("fontSize", 50);
         isCrop = getIntent().getBooleanExtra("crop", false);
         format = getIntent().getStringExtra("format");
+        allText = getIntent().getStringExtra("allText");
 
-        PenConfig.PAINT_COLOR = PenConfig.getPaintColor(this);
-        PenConfig.PAINT_SIZE_LEVEL = PenConfig.getPaintTextLevel(this);
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-        super.onCreate(savedInstanceState);
-        SystemUtil.disableShowInput(getApplicationContext(), mEditView);
+        PenConfig.PAINT_COLOR = Color.parseColor("#101010");
+        PenConfig.PAINT_SIZE_LEVEL = 2;
 
-    }
-
-
-    /**
-     * 横竖屏切换
-     */
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        setContentView(R.layout.sign_activity_grid_paint);
-        initTitleBar();
         initView();
         initData();
-        SystemUtil.disableShowInput(getApplicationContext(), mEditView);
 
-        if (mEditView != null && cacheEditable != null) {
-            mEditView.setText(cacheEditable);
-            mEditView.setSelection(cacheEditable.length());
-            mEditView.requestFocus();
-        }
-        mHandler = new Handler(this);
-        if (settingWindow != null) {
-            settingWindow.dismiss();
-        }
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        super.onCreate(savedInstanceState);
+        SignSystemUtil.disableShowInput(getApplicationContext(), viewBinding.editView);
     }
 
-    @Override
-    protected int getLayout() {
-        return R.layout.sign_activity_grid_paint;
+    /**
+     * 设置主题颜色
+     *
+     * @param color 主题颜色
+     */
+    protected void setThemeColor(int color) {
+        viewBinding.actionbar.getRoot().setBackgroundColor(color);
+        StatusBarCompat.compat(this, color);
     }
 
-    @Override
-    protected void initData() {
+    private void initData() {
         setThemeColor(PenConfig.THEME_COLOR);
-        mPenCircleView.setOutBorderColor(PenConfig.THEME_COLOR);
-
-        mClearView.setEnabled(false);
-        mClearView.setImage(R.drawable.sign_ic_clear, Color.LTGRAY);
-        mEnterView.setImage(R.drawable.sign_ic_enter, PenConfig.THEME_COLOR);
-        mSpaceView.setImage(R.drawable.sign_ic_space, PenConfig.THEME_COLOR);
-        mDeleteView.setImage(R.drawable.sign_ic_delete, PenConfig.THEME_COLOR);
-
         mHandler = new Handler(this);
-
     }
 
     /**
      * 初始化视图
      */
-    @Override
-    protected void initView() {
-        mPaintView = findViewById(R.id.paint_view);
-        mDeleteView = findViewById(R.id.delete);
-        mSpaceView = findViewById(R.id.space);
-        mPenCircleView = findViewById(R.id.pen_color);
-        mClearView = findViewById(R.id.clear);
-        mEnterView = findViewById(R.id.enter);
-        mEditView = findViewById(R.id.et_view);
-        mTextContainer = findViewById(R.id.sv_container);
-        mCircleContainer = findViewById(R.id.circle_container);
-        mEnterView.setOnClickListener(this);
-        mDeleteView.setOnClickListener(this);
-        mSpaceView.setOnClickListener(this);
-        mPenCircleView.setOnClickListener(this);
-        tvCancel.setOnClickListener(this);
-        mClearView.setOnClickListener(this);
-        tvSave.setOnClickListener(this);
-        mPenCircleView.setPaintColor(PenConfig.PAINT_COLOR);
-        mPenCircleView.setRadiusLevel(PenConfig.PAINT_SIZE_LEVEL);
+    private void initView() {
+        viewBinding.deleteView.getRoot().setVisibility(View.INVISIBLE);
+        viewBinding.deleteView.getRoot().setOnClickListener(this);
+        viewBinding.actionbar.backBtn.setOnClickListener(this);
+        viewBinding.actionbar.navigationTitle.setText("文字输入");
+
+        refreshAllTextView();
 
         int size = getResources().getDimensionPixelSize(R.dimen.sign_grid_size);
         GridDrawable gridDrawable = new GridDrawable(size, size, Color.WHITE);
-        mPaintView.setBackground(gridDrawable);
+        viewBinding.paintView.setBackground(gridDrawable);
 
-        mPaintView.setGetTimeListener(new GridPaintView.WriteListener() {
+        viewBinding.paintView.setGetTimeListener(new GridPaintView.WriteListener() {
             @Override
             public void onWriteStart() {
                 mHandler.removeMessages(MSG_WRITE_OK);
@@ -169,30 +131,85 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
             }
         });
 
-        int maxWidth = lineSize * DisplayUtil.dip2px(this, fontSize);
+        int maxWidth = lineSize * SignDisplayUtil.dip2px(this, fontSize);
         if (!isCrop) {
-            mEditView.setWidth(maxWidth + 2);
-            mEditView.setMaxWidth(maxWidth);
+            viewBinding.editView.setWidth(maxWidth + 2);
+            viewBinding.editView.setMaxWidth(maxWidth);
         } else {
-            mEditView.setWidth(maxWidth * 2 / 3);
-            mEditView.setMaxWidth(maxWidth * 2 / 3);
+            viewBinding.editView.setWidth(maxWidth * 2 / 3);
+            viewBinding.editView.setMaxWidth(maxWidth * 2 / 3);
         }
-        mEditView.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
-        mEditView.setLineHeight(DisplayUtil.dip2px(this, fontSize));
-        mEditView.setHorizontallyScrolling(false);
-        mEditView.requestFocus();
+        viewBinding.editView.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
+        viewBinding.editView.setLineHeight(SignDisplayUtil.dip2px(this, fontSize));
+        viewBinding.editView.setHorizontallyScrolling(false);
+        viewBinding.editView.requestFocus();
         if (bgColor != Color.TRANSPARENT) {
-            mTextContainer.setBackgroundColor(bgColor);
+            viewBinding.svContainer.setBackgroundColor(bgColor);
         }
-        mEditView.addTextWatcher(s -> {
-            if (s != null && s.length() > 0) {
-                mClearView.setEnabled(true);
-                mClearView.setImage(R.drawable.sign_ic_clear, PenConfig.THEME_COLOR);
-            } else {
-                mClearView.setEnabled(false);
-                mClearView.setImage(R.drawable.sign_ic_clear, Color.LTGRAY);
+    }
+
+    private void refreshAllTextView() {
+        if (currentIndex < this.allText.length()) {
+            SpannableString spannableString = new SpannableString(this.allText);
+            //设置颜色
+            spannableString.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.sign_pen_red)), currentIndex, currentIndex + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            viewBinding.allTextView.setText(spannableString);
+        }
+    }
+
+    private void changeDeleteShow() {
+        int index = viewBinding.editView.getSelectionStart();
+        if (index > 0) {
+            if (this.viewBinding.deleteView.getRoot().getVisibility() == View.INVISIBLE) {
+                AlphaAnimation mAnimation = new AlphaAnimation(0.0f, 1f);
+                mAnimation.setDuration(250);
+                mAnimation.setRepeatCount(0);
+                mAnimation.setFillAfter(true);
+                mAnimation.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                        //empty
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        GridPaintActivity.this.viewBinding.deleteView.getRoot().setVisibility(View.VISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+                        //empty
+                    }
+                });
+                this.viewBinding.deleteView.getRoot().setAnimation(mAnimation);
+
             }
-        });
+        } else {
+            if (this.viewBinding.deleteView.getRoot().getVisibility() == View.VISIBLE) {
+                AlphaAnimation mAnimation = new AlphaAnimation(1f, 0.0f);
+                mAnimation.setDuration(250);
+                mAnimation.setRepeatCount(0);
+                mAnimation.setFillAfter(true);
+                mAnimation.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                        //empty
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        GridPaintActivity.this.viewBinding.deleteView.getRoot().setVisibility(View.INVISIBLE);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+                        //empty
+                    }
+                });
+                this.viewBinding.deleteView.getRoot().setAnimation(mAnimation);
+
+            }
+        }
     }
 
     @Override
@@ -203,7 +220,7 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
 
     @Override
     protected void onDestroy() {
-        mPaintView.release();
+        viewBinding.paintView.release();
         super.onDestroy();
         mHandler.removeMessages(MSG_SAVE_FAILED);
         mHandler.removeMessages(MSG_SAVE_SUCCESS);
@@ -214,22 +231,6 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
         mSaveProgressDlg = new ProgressDialog(this);
         mSaveProgressDlg.setMessage("正在保存,请稍候...");
         mSaveProgressDlg.setCancelable(false);
-    }
-
-    /**
-     * 弹出清空提示
-     */
-    private void showClearTips() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("提示")
-                .setMessage("清空文本框内手写内容？")
-                .setNegativeButton("取消", null)
-                .setPositiveButton("确定", (dialog, which) -> {
-                    mEditView.setText("");
-                    mEditView.setSelection(0);
-                    cacheEditable = null;
-                });
-        builder.show();
     }
 
     @Override
@@ -251,10 +252,14 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
                 finish();
                 break;
             case MSG_WRITE_OK:
-                if (!mPaintView.isEmpty()) {
-                    Bitmap bitmap = mPaintView.buildBitmap(isCrop, DisplayUtil.dip2px(GridPaintActivity.this, fontSize));
-                    this.cacheEditable = mEditView.addBitmapToText(bitmap);
-                    mPaintView.reset();
+                if (!viewBinding.paintView.isEmpty()) {
+                    Bitmap bitmap = viewBinding.paintView.buildBitmap(isCrop, SignDisplayUtil.dip2px(GridPaintActivity.this, fontSize));
+                    this.cacheEditable = viewBinding.editView.addBitmapToText(bitmap);
+                    viewBinding.paintView.reset();
+                    this.currentIndex = viewBinding.editView.getSelectionStart();
+                    refreshAllTextView();
+                    changeDeleteShow();
+                    writeComplete();
                 }
                 break;
             default:
@@ -263,12 +268,49 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
         return true;
     }
 
+    @Override
+    public void onClick(View v) {
+        if (v == viewBinding.deleteView.getRoot()) {
+            this.cacheEditable = viewBinding.editView.deleteBitmapFromText();
+            this.currentIndex = viewBinding.editView.getSelectionStart();
+            if (this.currentIndex >= 1) {
+                AlphaAnimation alphaAnimation = new AlphaAnimation(0f, 1.0f);
+                alphaAnimation.setDuration(800);
+                alphaAnimation.setInterpolator(new LinearInterpolator());
+                alphaAnimation.setRepeatCount(0);
+                alphaAnimation.setRepeatMode(Animation.REVERSE);
+                GridPaintActivity.this.viewBinding.deleteView.getRoot().startAnimation(alphaAnimation);
+            }
+            refreshAllTextView();
+            changeDeleteShow();
+        } else if (v == viewBinding.actionbar.backBtn) {
+            if (viewBinding.editView.getText() != null && viewBinding.editView.getText().length() > 0) {
+                showQuitTip();
+                changeDeleteShow();
+            } else {
+                setResult(RESULT_CANCELED);
+                finish();
+            }
+        }
+    }
+
+    private void writeComplete() {
+        if (currentIndex == this.allText.length()) {
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("提示")
+                    .setMessage("是否保存手写内容？")
+                    .setNegativeButton("取消", null)
+                    .setPositiveButton("确定", (dialog, which) -> save());
+            builder.show();
+        }
+    }
 
     /**
      * 保存
      */
     private void save() {
-        if (mEditView.getText() == null || mEditView.getText().length() == 0) {
+        if (null != viewBinding.editView.getText() && viewBinding.editView.getText().length() == 0) {
             Toast.makeText(getApplicationContext(), "没有写入任何文字", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -281,8 +323,8 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
         if (mSaveProgressDlg == null) {
             initSaveProgressDlg();
         }
-        mEditView.clearFocus();
-        mEditView.setCursorVisible(false);
+        viewBinding.editView.clearFocus();
+        viewBinding.editView.setCursorVisible(false);
 
         mSaveProgressDlg.show();
         new Thread(() -> {
@@ -290,20 +332,18 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
                 bgColor = Color.WHITE;
             }
             Bitmap bm = getWriteBitmap(bgColor);
-            bm = BitmapUtil.clearBlank(bm, 20, bgColor);
+            bm = SignBitmapUtil.clearBlank(bm, 20, bgColor);
 
             if (bm == null) {
                 mHandler.obtainMessage(MSG_SAVE_FAILED).sendToTarget();
                 return;
             }
-            mSavePath = BitmapUtil.saveImage(GridPaintActivity.this, bm, 100, format);
+            mSavePath = SignBitmapUtil.saveImage(GridPaintActivity.this, bm, 100, format);
             if (mSavePath != null) {
                 mHandler.obtainMessage(MSG_SAVE_SUCCESS).sendToTarget();
             } else {
                 mHandler.obtainMessage(MSG_SAVE_FAILED).sendToTarget();
             }
-            bm.recycle();
-            bm = null;
         }).start();
     }
 
@@ -316,11 +356,11 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
     private Bitmap getWriteBitmap(int bgColor) {
         int w = 0;
         int h = 0;
-        for (int i = 0; i < mTextContainer.getChildCount(); i++) {
-            h += mTextContainer.getChildAt(i).getHeight();
-            w += mTextContainer.getChildAt(i).getWidth();
+        for (int i = 0; i < viewBinding.svContainer.getChildCount(); i++) {
+            h += viewBinding.svContainer.getChildAt(i).getHeight();
+            w += viewBinding.svContainer.getChildAt(i).getWidth();
         }
-        Bitmap bitmap = null;
+        Bitmap bitmap;
         try {
             bitmap = Bitmap.createBitmap(w, h,
                     Bitmap.Config.ARGB_8888);
@@ -330,97 +370,18 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
         }
         Canvas canvas = new Canvas(bitmap);
         canvas.drawColor(bgColor);
-        mTextContainer.draw(canvas);
+        viewBinding.svContainer.draw(canvas);
         return bitmap;
     }
 
     @Override
-    public void onClick(View v) {
-        int i = v.getId();
-        if (i == R.id.delete) {
-            this.cacheEditable = mEditView.deleteBitmapFromText();
-        } else if (i == R.id.tv_cancel) {
-            if (mEditView.getText() != null && mEditView.getText().length() > 0) {
-                showQuitTip();
-            } else {
-                setResult(RESULT_CANCELED);
-                finish();
-            }
-        } else if (i == R.id.tv_ok) {
-            save();
-        } else if (i == R.id.enter) {
-            Editable editable = mEditView.getText();
-            editable.insert(mEditView.getSelectionStart(), "\n");
-        } else if (i == R.id.space) {
-            mEditView.addSpace(fontSize);
-        } else if (i == R.id.clear) {
-            showClearTips();
-        } else if (i == R.id.pen_color) {
-            showSettingWindow();
-        }
-    }
-
-
-    /**
-     * 弹出画笔设置
-     */
-    private void showSettingWindow() {
-        settingWindow = new PaintSettingWindow(this);
-
-        settingWindow.setSettingListener(new PaintSettingWindow.OnSettingListener() {
-            @Override
-            public void onColorSetting(int color) {
-                mPaintView.setPaintColor(color);
-                mPenCircleView.setPaintColor(PenConfig.PAINT_COLOR);
-            }
-
-            @Override
-            public void onSizeSetting(int level) {
-                mPaintView.setPaintWidth(PaintSettingWindow.PEN_SIZES[level]);
-                mPenCircleView.setRadiusLevel(level);
-            }
-        });
-
-        int[] location = new int[2];
-        mCircleContainer.getLocationOnScreen(location);
-        View contentView = settingWindow.getContentView();
-        //需要先测量，PopupWindow还未弹出时，宽高为0
-        contentView.measure(SystemUtil.makeDropDownMeasureSpec(settingWindow.getWidth()),
-                SystemUtil.makeDropDownMeasureSpec(settingWindow.getHeight()));
-
-        int padding = DisplayUtil.dip2px(this, 10);
-        int offsetX, offsetY;
-
-        Configuration config = getResources().getConfiguration();
-        int smallestScreenWidth = config.smallestScreenWidthDp;
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE && smallestScreenWidth >= 720) {
-            //平板上横屏显示
-            settingWindow.popAtBottomRight();
-            settingWindow.showAsDropDown(mCircleContainer, mCircleContainer.getWidth() - settingWindow.getContentView().getMeasuredWidth() - padding, 10);
-        } else if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            //横屏显示
-            offsetX = -settingWindow.getContentView().getMeasuredWidth() - padding;
-            offsetY = -settingWindow.getContentView().getMeasuredHeight() - mCircleContainer.getHeight() / 2 + padding;
-            settingWindow.popAtLeft();
-            settingWindow.showAsDropDown(mCircleContainer, offsetX, offsetY);
-        } else {
-            //竖屏显示
-            offsetX = 0;
-            offsetY = -(settingWindow.getContentView().getMeasuredHeight() + mPenCircleView.getHeight() + 4 * padding);
-            settingWindow.popAtTopLeft();
-            settingWindow.showAsDropDown(mPenCircleView, offsetX, offsetY);
-        }
-    }
-
-    @Override
     public void onBackPressed() {
-        if (mEditView.getText() != null && mEditView.getText().length() > 0) {
+        if (viewBinding.editView.getText() != null && viewBinding.editView.getText().length() > 0) {
             showQuitTip();
         } else {
             setResult(RESULT_CANCELED);
             finish();
         }
-
     }
 
     /**
@@ -437,6 +398,5 @@ public class GridPaintActivity extends BaseActivity implements View.OnClickListe
                 });
         builder.show();
     }
-
 
 }

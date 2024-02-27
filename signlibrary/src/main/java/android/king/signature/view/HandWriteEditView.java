@@ -5,7 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.king.signature.util.DisplayUtil;
+import android.king.signature.util.SignDisplayUtil;
 import android.support.v7.widget.AppCompatEditText;
 import android.text.Editable;
 import android.text.SpannableString;
@@ -16,7 +16,7 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.inputmethod.EditorInfo;
 
-import android.king.signature.util.SystemUtil;
+import android.king.signature.util.SignSystemUtil;
 
 
 
@@ -51,10 +51,9 @@ public class HandWriteEditView extends AppCompatEditText {
         this.setTextIsSelectable(false);
         this.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         this.setGravity(Gravity.START);
-
         //禁止选择复制粘贴
-        SystemUtil.disableCopyAndPaste(this);
-        lineHeight = (float)DisplayUtil.dip2px(getContext(),50f);
+        SignSystemUtil.disableCopyAndPaste(this);
+        lineHeight = (float) SignDisplayUtil.dip2px(getContext(),50f);
         addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -118,7 +117,7 @@ public class HandWriteEditView extends AppCompatEditText {
      * 添加空格
      */
     public void addSpace(int fontSize) {
-        int size = DisplayUtil.dip2px(getContext(), fontSize);
+        int size = SignDisplayUtil.dip2px(getContext(), fontSize);
         ColorDrawable drawable = new ColorDrawable(Color.TRANSPARENT);
         Bitmap bitmap = Bitmap.createBitmap(fontSize, size, Bitmap.Config.ARGB_4444);
         Canvas canvas = new Canvas(bitmap);

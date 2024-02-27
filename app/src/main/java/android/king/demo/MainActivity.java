@@ -8,7 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.king.signature.GridPaintActivity;
-import android.king.signature.PaintActivity;
 import android.king.signature.config.PenConfig;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.PermissionChecker;
@@ -43,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         initView();
 
         //主题颜色配置
-        PenConfig.THEME_COLOR = Color.parseColor("#0c53ab");
+        PenConfig.THEME_COLOR = Color.parseColor("#3b98ed");
     }
 
     private void initView() {
@@ -56,20 +55,7 @@ public class MainActivity extends AppCompatActivity {
      * @param view
      */
     public void openBlank(View view) {
-        if (!isPermissionOk) {
-            return;
-        }
-        Intent intent = new Intent(this, PaintActivity.class);
 
-//        intent.putExtra("background", Color.WHITE);//画布背景色，默认透明，也是最终生成图片的背景色
-
-//        intent.putExtra("width", 800); //画布宽度，最大值3000，默认占满布局
-//        intent.putExtra("height", 800);//画布高度，最大值3000，默认占满布局
-        intent.putExtra("crop", false);   //最终的图片是否只截取文字区域
-        intent.putExtra("format", PenConfig.FORMAT_PNG); //图片格式
-//        intent.putExtra("image", imagePath); //初始图片
-
-        startActivityForResult(intent, 100);
     }
 
     /**
@@ -81,11 +67,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         Intent intent = new Intent(this, GridPaintActivity.class);
-        intent.putExtra("background", Color.WHITE);
+//        intent.putExtra("background", Color.WHITE);
         intent.putExtra("crop", true);
         intent.putExtra("fontSize", 50);  //手写字体大小
         intent.putExtra("format", PenConfig.FORMAT_PNG);
-        intent.putExtra("lineLength", 10);   //每行显示字数（超出屏幕支持横向滚动）
+        intent.putExtra("lineLength", 12);   //每行显示字数（超出屏幕支持横向滚动）
+        intent.putExtra("allText", "我已知晓不得转租转售电话卡，出现的法律风险由本人承担。");   //每行显示字数（超出屏幕支持横向滚动）
         startActivityForResult(intent, 100);
     }
 

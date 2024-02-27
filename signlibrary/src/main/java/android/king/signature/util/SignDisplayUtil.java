@@ -5,13 +5,13 @@ import android.view.Display;
 import android.view.WindowManager;
 
 /***
- * 名称：DisplayUtil<br>
+ * 名称：SignDisplayUtil<br>
  * 描述：显示相关操作工具类
  * 最近修改时间：
  * @since 2017/11/16
  * @author king
  */
-public class DisplayUtil {
+public class SignDisplayUtil {
 
 
     /**
